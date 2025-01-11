@@ -34,7 +34,7 @@ cp .env.example .env
 ## Project Structure
 
 - `agent.rb` - Main agent implementation
-- `chat_bot.rb` - Chat bot logic
+- `chat_bot.rb` - Chatbot logic
 - `llm_client.rb` - LLM service client implementation
 - `main.rb` - Application entry point
 
