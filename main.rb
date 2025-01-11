@@ -1,7 +1,9 @@
 require "dotenv"
 Dotenv.load(File.join(__dir__, ".env"))
+
 require "http"
 require "json"
+require "colorize"
 
 require_relative "llm_client"
 require_relative "chat_bot"
@@ -17,7 +19,7 @@ agent = Agent.new(:deepseek)
 # agent = Agent.new(:openai, "gpt-4")
 # agent = Agent.new(:deepseek, "deepseek-chat")
 
-puts "Welcome to the AI agent. Type 'exit' to quit"
+puts "Welcome to the AI agent. Type 'exit' to quit".colorize(:blue)
 while true
   print "You: "
   question = gets.chomp

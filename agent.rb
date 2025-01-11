@@ -55,16 +55,16 @@ class Agent
     while i < max_turns
       i += 1
       result = bot.call(next_prompt)
-      puts result
+      puts result.colorize(:yellow)
 
       actions = result.split("\n").map { |line| ACTION_REGEX.match(line) }.compact
       if actions.any?
         action, action_input = actions.first.captures
         raise "Unknown action: #{action}: #{action_input}" unless @known_actions.key?(action)
 
-        puts " -- running #{action} #{action_input}"
+        puts " -- running #{action} #{action_input}".colorize(:green)
         observation = @known_actions[action].call(action_input)
-        puts "Observation: #{observation}"
+        puts "Observation: #{observation}".colorize(:green)
         next_prompt = "Observation: #{observation}"
       else
         return
