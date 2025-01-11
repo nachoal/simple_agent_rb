@@ -85,6 +85,8 @@ class Agent
       OpenAIClient.new(PROMPT, @model)
     when :deepseek
       DeepSeekClient.new(PROMPT, @model)
+    when :perplexity
+      PerplexityClient.new("", @model)
     else
       raise ArgumentError, "Unknown LLM provider: #{@llm_provider}"
     end
