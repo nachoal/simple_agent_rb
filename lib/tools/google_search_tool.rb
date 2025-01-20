@@ -1,8 +1,13 @@
 require "http"
 require "json"
 require_relative "tool"
+require_relative "tool_metadata"
 
 class GoogleSearchTool < Tool
+  extend ToolMetadata
+
+  describe :call, "Performs a Google search using Custom Search API and returns detailed results including titles, URLs, descriptions, and metadata for up to 10 results."
+
   def initialize
     super("google_search")
     @api_key = ENV["GOOGLE_SEARCH_API_KEY"]

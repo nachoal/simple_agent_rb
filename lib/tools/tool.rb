@@ -17,7 +17,13 @@
 #       # Return a string result
 #     end
 #   end
+require_relative "tool_metadata"
+
 class Tool
+  extend ToolMetadata
+
+  describe :call, "Base method that all tools must implement to process input and return a result. This method should be overridden by subclasses."
+
   # The name of the tool, used to identify it in prompts and commands
   attr_reader :name
 

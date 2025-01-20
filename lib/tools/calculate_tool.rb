@@ -1,6 +1,11 @@
 require_relative "tool"
+require_relative "tool_metadata"
 
 class CalculateTool < Tool
+  extend ToolMetadata
+
+  describe :call, "Evaluates mathematical expressions with support for basic operators (+, -, *, /, %, **) and parentheses."
+
   def initialize
     super("calculate")
   end

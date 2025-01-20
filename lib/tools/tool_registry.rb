@@ -14,9 +14,14 @@
 require "singleton"
 require "pathname"
 require_relative "tool"
+require_relative "tool_metadata"
 
 class ToolRegistry
   include Singleton
+  extend ToolMetadata
+
+  describe :fetch, "Retrieves a tool instance by its name, raising an error if the tool doesn't exist."
+  describe :tools, "Returns a hash of all registered tools, mapping tool names to their instances."
 
   # Initialize the registry and load all available tools
   def initialize
