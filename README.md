@@ -11,7 +11,6 @@ A Ruby-based AI agent that can perform various tasks through a collection of too
 - Built-in Tools:
   - Wikipedia Search
   - Google Search
-  - Simon Willison's Blog Search
   - Safe Calculator
 
 ## Prerequisites

@@ -25,10 +25,6 @@ class Agent
     e.g. google_search: Ruby on Rails tutorials
     Returns the top 10 results from Google Custom Search API, each with a title, URL, and description
 
-    simon_blog_search:
-    e.g. simon_blog_search: Python
-    Returns relevant entries from Simon Willison's blog
-
     Always look things up on Wikipedia if you have the opportunity to do so.
 
     Example session:
