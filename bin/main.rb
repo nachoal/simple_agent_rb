@@ -23,7 +23,7 @@ require "tools/tool_registry"
 puts "Welcome to the AI agent. Type 'exit' to quit".colorize(:blue)
 
 # Initialize your agent with the desired LLM provider
-agent = Agent.new(:deepseek)
+agent = Agent.new(:openai, "o3")
 
 loop do
   print "You: "

@@ -40,7 +40,6 @@ class OpenAIClient < LLMClient
       )
 
     parsed_response = JSON.parse(response.body.to_s)
-    puts "Parsed response: #{parsed_response}"
 
     if parsed_response["error"]
       raise "OpenAI API Error: #{parsed_response["error"]}"
