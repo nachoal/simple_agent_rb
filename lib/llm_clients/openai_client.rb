@@ -16,6 +16,19 @@ class OpenAIClient < LLMClient
   private
 
   def execute
+    # Build the request payload
+    payload = {
+      model: @model,
+      messages: @messages
+    }
+
+    # Some models (like "o3") require :max_completion_tokens instead of :max_tokens
+    if @model.to_s.start_with?("o3")
+      payload[:max_completion_tokens] = 4000
+    else
+      payload[:max_tokens] = 4000
+    end
+
     response = HTTP
       .headers(
         "Content-Type" => "application/json",
@@ -23,14 +36,16 @@ class OpenAIClient < LLMClient
       )
       .post(
         OPENAI_API_URL,
-        json: {
-          model: @model,
-          messages: @messages,
-          max_tokens: 4000
-        }
+        json: payload
       )
 
     parsed_response = JSON.parse(response.body.to_s)
+    puts "Parsed response: #{parsed_response}"
+
+    if parsed_response["error"]
+      raise "OpenAI API Error: #{parsed_response["error"]}"
+    end
+
     parsed_response.dig("choices", 0, "message", "content")
   end
 end 

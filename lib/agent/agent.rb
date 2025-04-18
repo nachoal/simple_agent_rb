@@ -57,7 +57,12 @@ class Agent
     while i < max_turns
       i += 1
       result = bot.call(next_prompt)
-      puts result.colorize(:yellow)
+      if result.nil?
+        puts "[LLM returned no content]".colorize(:red)
+        return
+      end
+
+      puts result.to_s.colorize(:yellow)
 
       actions = result.split("\n").map { |line| ACTION_REGEX.match(line) }.compact
       if actions.any?
