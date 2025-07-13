@@ -43,6 +43,31 @@ class ToolRegistry
     @tools
   end
 
+  # Return JSON schemas for OpenAI function calling
+  def tool_schemas
+    @tools.map do |name, tool|
+      {
+        "type" => "function",
+        "function" => {
+          "name" => name,
+          "description" => tool.class.description_for(:call) || "No description provided.",
+          "parameters" => {
+            "type" => "object",
+            "properties" => {
+              "input" => {
+                "type" => "string",
+                "description" => "Input for the #{name} tool"
+              }
+            },
+            "required" => ["input"],
+            "additionalProperties" => false
+          },
+          "strict" => true
+        }
+      }
+    end
+  end
+
   private
 
   # Load all tool classes from the tools directory
