@@ -47,4 +47,40 @@ class OpenAIClient < LLMClient
 
     parsed_response.dig("choices", 0, "message", "content")
   end
+
+  public
+
+  def chat_completion(messages:, tools: [], tool_choice: "auto")
+    payload = {
+      model: @model,
+      messages: messages
+    }
+    payload[:tools] = tools if tools.any?
+    payload[:tool_choice] = tool_choice unless tool_choice == "auto"
+
+    # Preserve existing token key logic
+    if @model.to_s.start_with?("o3")
+      payload[:max_completion_tokens] = 4000
+    else
+      payload[:max_tokens] = 4000
+    end
+
+    response = HTTP
+      .headers(
+        "Content-Type" => "application/json",
+        "Authorization" => "Bearer #{@api_key}"
+      )
+      .post(
+        OPENAI_API_URL,
+        json: payload
+      )
+
+    parsed_response = JSON.parse(response.body.to_s)
+
+    if parsed_response["error"]
+      raise "OpenAI API Error: #{parsed_response["error"]}"
+    end
+
+    parsed_response
+  end
 end 

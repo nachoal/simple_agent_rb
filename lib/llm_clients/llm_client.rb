@@ -41,6 +41,8 @@ class LLMClient
     result
   end
 
+  attr_reader :messages
+
   private
 
   # Execute the actual API call to the LLM provider
