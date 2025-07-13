@@ -15,15 +15,15 @@ require "agent/agent"
 require "llm_clients/openai_client"
 require "llm_clients/deepseek_client"
 require "llm_clients/perplexity_client"
+require "llm_clients/moonshot_client"
 
 # Only need to require the base Tool class and registry
-require "tools/tool"
 require "tools/tool_registry"
 
 puts "Welcome to the AI agent. Type 'exit' to quit".colorize(:blue)
 
 # Initialize your agent with the desired LLM provider
-agent = Agent.new(:openai, "o3")
+agent = Agent.new(:moonshot, "kimi-k2-0711-preview")
 
 loop do
   print "You: "
