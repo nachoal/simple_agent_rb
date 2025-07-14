@@ -8,10 +8,15 @@ A Ruby-based AI agent that can perform various tasks through a collection of too
   - OpenAI (GPT-4)
   - DeepSeek
   - Perplexity
+  - Moonshot (Kimi)
 - Built-in Tools:
   - Wikipedia Search
   - Google Search
   - Safe Calculator
+- Clean Terminal UI:
+  - Emoji-based iteration tracking
+  - Markdown-formatted responses
+  - Verbose mode for debugging
 
 ## Prerequisites
 
@@ -20,6 +25,7 @@ A Ruby-based AI agent that can perform various tasks through a collection of too
   - OpenAI API Key (for OpenAI)
   - DeepSeek API Key (for DeepSeek)
   - Perplexity API Key (for Perplexity)
+  - Moonshot API Key (for Moonshot/Kimi)
   - Google Search API Key and Search Engine ID (for Google Search)
 
 ## Installation
@@ -49,6 +55,7 @@ Edit `.env` and add your API keys:
 OPENAI_API_KEY=your_openai_key
 DEEPSEEK_API_KEY=your_deepseek_key
 PERPLEXITY_API_KEY=your_perplexity_key
+MOONSHOT_API_KEY=your_moonshot_key
 GOOGLE_SEARCH_API_KEY=your_google_key
 GOOGLE_SEARCH_ENGINE_ID=your_search_engine_id
 ```
@@ -61,7 +68,15 @@ Run the agent:
 ruby bin/main.rb
 ```
 
-By default, the agent uses DeepSeek. You can modify `bin/main.rb` to use a different provider:
+With verbose mode (shows detailed tool execution):
+
+```bash
+ruby bin/main.rb -v
+# or
+ruby bin/main.rb --verbose
+```
+
+By default, the agent uses Moonshot. You can modify `bin/main.rb` to use a different provider:
 
 ```ruby
 # Use OpenAI
@@ -69,6 +84,9 @@ agent = Agent.new(:openai)
 
 # Use Perplexity
 agent = Agent.new(:perplexity)
+
+# Use Moonshot with specific model
+agent = Agent.new(:moonshot, "kimi-k2-0711-preview")
 
 # Specify a model
 agent = Agent.new(:openai, "gpt-4")
@@ -87,7 +105,8 @@ simple_agent_rb/
     │   ├── llm_client.rb    # Base LLM client
     │   ├── openai_client.rb
     │   ├── deepseek_client.rb
-    │   └── perplexity_client.rb
+    │   ├── perplexity_client.rb
+    │   └── moonshot_client.rb
     └── tools/               # Available tools
         ├── tool.rb          # Base tool class
         ├── tool_registry.rb # Tool management
@@ -96,6 +115,21 @@ simple_agent_rb/
         ├── simon_blog_search_tool.rb
         └── calculate_tool.rb
 ```
+
+## UI Features
+
+### Normal Mode
+In normal mode, the agent displays clean, emoji-based logs:
+- 🔄 Agent iteration tracking
+- 📞 Tool call indicators  
+- ↻ Loop continuation messages
+- Beautiful markdown-formatted responses
+
+### Verbose Mode
+Enable with `-v` or `--verbose` flag to see:
+- Detailed tool execution logs
+- Full observation outputs
+- Debugging information
 
 ## Adding New Tools
 
