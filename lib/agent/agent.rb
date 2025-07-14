@@ -49,6 +49,7 @@ class Agent
   PROMPT_TOOLCALL = <<~PROMPT
     You are an AI assistant that can leverage external tools to answer the user.
     You have access to a set of tools defined separately in the request. When useful, call them.
+    When you don't call a tool use markdown to format your response.
 
     Guidelines:
     1. If the answer can be given directly, do so.
