@@ -1,5 +1,6 @@
 require "colorize"
 require "json"
+require "tty-markdown"
 require_relative "../tools/tool_registry"
 
 class Agent
@@ -63,10 +64,11 @@ class Agent
     Do **not** add any other keys. Do **not** think about the JSON structure—just output it.
   PROMPT
 
-  def initialize(llm_provider = :openai, model = nil)
+  def initialize(llm_provider = :openai, model = nil, verbose: false)
     @tool_registry = ToolRegistry.instance
     @llm_provider = llm_provider
     @model = model
+    @verbose = verbose
     @bot = create_llm_client
     
     # Log the chosen provider and model
@@ -83,6 +85,27 @@ class Agent
     puts ""
   end
 
+  # Helper methods for formatted output
+  def log_iteration(current, max)
+    puts "🔄 Agent iteration #{current}/#{max}".colorize(:cyan)
+  end
+
+  def log_tool_calls_start(count)
+    puts "  ↘️  Agent making #{count} tool call(s)".colorize(:light_cyan)
+  end
+
+  def log_tool_call(tool_name)
+    puts "    📞 Calling tool: #{tool_name}".colorize(:light_cyan)
+  end
+
+  def log_no_tools
+    puts "  ↻  Agent responded without tool calls - continuing loop".colorize(:light_cyan)
+  end
+
+  def log_completion
+    puts "✅ Task completion tool called - exiting loop".colorize(:green)
+  end
+
   def query(question, max_turns = 5)
     i = 0
     bot = @bot
@@ -91,6 +114,9 @@ class Agent
 
     while i < max_turns
       i += 1
+      
+      # Show iteration number in non-verbose mode
+      log_iteration(i, max_turns) unless @verbose
 
       if @llm_provider == :openai || @llm_provider == :moonshot
         # Use OpenAI-compatible function calling
@@ -162,6 +188,9 @@ class Agent
 
         # If the model decided to call one or more functions
         if assistant_message["tool_calls"]
+          # Show tool calls count in non-verbose mode
+          log_tool_calls_start(assistant_message["tool_calls"].length) unless @verbose
+          
           assistant_message["tool_calls"].each do |tool_call|
             tool_name = tool_call.dig("function", "name")
             raw_args  = tool_call.dig("function", "arguments")
@@ -170,9 +199,17 @@ class Agent
 
             tool = @tool_registry.fetch(tool_name)
 
-            puts " -- running #{tool_name} #{tool_input}".colorize(:green)
+            if @verbose
+              puts " -- running #{tool_name} #{tool_input}".colorize(:green)
+            else
+              log_tool_call(tool_name)
+            end
+            
             observation = tool.call(tool_input)
-            puts "Observation: #{observation}".colorize(:green)
+            
+            if @verbose
+              puts "Observation: #{observation}".colorize(:green)
+            end
 
             # Append the result for this specific tool call
             bot.messages << {
@@ -188,7 +225,8 @@ class Agent
           next
         else
           # No tool calls -> final answer
-          return assistant_message["content"]
+          log_no_tools unless @verbose
+          return format_markdown(assistant_message["content"])
         end
 
       else
@@ -200,19 +238,32 @@ class Agent
         end
 
         actions = result.split("\n").map { |line| ACTION_REGEX.match(line) }.compact
-        puts result.to_s.colorize(:yellow) if actions.any?
+        puts format_markdown(result) if actions.any?
 
         if actions.any?
+          # Show tool calls count in non-verbose mode
+          log_tool_calls_start(1) unless @verbose
+          
           action, action_input = actions.first.captures
           tool = @tool_registry.fetch(action)
           
-          puts " -- running #{action} #{action_input}".colorize(:green)
+          if @verbose
+            puts " -- running #{action} #{action_input}".colorize(:green)
+          else
+            log_tool_call(action)
+          end
+          
           observation = tool.call(action_input)
-          puts "Observation: #{observation}".colorize(:green)
+          
+          if @verbose
+            puts "Observation: #{observation}".colorize(:green)
+          end
+          
           next_prompt = "Observation: #{observation}"
         else
           # No action lines, final answer
-          puts result.to_s.colorize(:yellow)
+          log_no_tools unless @verbose
+          puts format_markdown(result)
           return result
         end
       end
@@ -223,6 +274,34 @@ class Agent
   end
 
   private
+
+  def format_markdown(text)
+    return text if text.nil? || text.empty?
+    
+    # Only format if it looks like it contains markdown
+    if text.match?(/[*_#`\[\]()]/)
+      TTY::Markdown.parse(text, 
+        width: 120,
+        theme: {
+          em: :yellow,
+          strong: [:cyan, :bold],
+          header: [:magenta, :bold],
+          link: :blue,
+          code: :green,
+          quote: :italic,
+          hr: :yellow,
+          list: :cyan,
+          table: :magenta
+        }
+      )
+    else
+      text
+    end
+  rescue => e
+    # Fallback to plain text if parsing fails
+    puts "Markdown parsing failed: #{e.message}".colorize(:red) if @verbose
+    text
+  end
 
   def create_llm_client
     case @llm_provider
