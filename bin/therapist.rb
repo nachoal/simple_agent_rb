@@ -16,6 +16,7 @@ require "llm_clients/deepseek_client"
 require "llm_clients/perplexity_client"
 require "llm_clients/moonshot_client"
 require "llm_clients/lm_studio_client"
+require "input/input_handler"
 require "tools/tool_registry"
 
 THERAPIST_PROMPT = <<~PROMPT
@@ -121,11 +122,13 @@ end
 begin
   agent = Agent.new(options[:provider], options[:model], verbose: options[:verbose], system_prompt: THERAPIST_PROMPT)
   
+  # Initialize the enhanced input handler with a different history file for therapy sessions
+  input_handler = InputHandler.new(history_file: File.join(Dir.home, '.simple_agent_therapy_history'))
+  
   loop do
-    print "\n💭 You: ".colorize(:cyan)
-    user_input = gets.chomp
+    user_input = input_handler.read_input(prompt_text: "💭 You: ", agent_status: "Listening")
     
-    break if user_input.downcase == 'exit' || user_input.downcase == 'quit'
+    break if user_input.nil? || user_input.downcase == 'exit' || user_input.downcase == 'quit'
     
     puts "\n💚 Therapist: ".colorize(:green)
     response = agent.query(user_input, 10)  # Allow more iterations for complex tool use

@@ -18,6 +18,7 @@ require "llm_clients/deepseek_client"
 require "llm_clients/perplexity_client"
 require "llm_clients/moonshot_client"
 require "llm_clients/lm_studio_client"
+require "input/input_handler"
 
 # Only need to require the base Tool class and registry
 require "tools/tool_registry"
@@ -75,15 +76,17 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-puts "Welcome to the AI agent. Type 'exit' to quit".colorize(:blue)
+puts "Welcome to the AI agent. Type 'exit' or '/help' for help".colorize(:blue)
 
 # Initialize your agent with the desired LLM provider
 agent = Agent.new(options[:provider], options[:model], verbose: options[:verbose])
 
+# Initialize the enhanced input handler
+input_handler = InputHandler.new
+
 loop do
-  print "You: ".colorize(:green)
-  question = gets.chomp
-  break if question.downcase == "exit"
+  question = input_handler.read_input(prompt_text: "You: ", agent_status: "Ready")
+  break if question.nil? || question.downcase == "exit"
 
   puts agent.query(question)
 end
