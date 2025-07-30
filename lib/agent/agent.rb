@@ -65,11 +65,20 @@ class Agent
     Do **not** add any other keys. Do **not** think about the JSON structure—just output it.
   PROMPT
 
-  def initialize(llm_provider = :openai, model = nil, verbose: false)
+  def initialize(llm_provider = :openai, model = nil, verbose: false, system_prompt: nil)
     @tool_registry = ToolRegistry.instance
-    @llm_provider = llm_provider
-    @model = model
+    
+    # Handle lmstudio/model-name format
+    if model&.start_with?("lmstudio/")
+      @llm_provider = :lmstudio
+      @model = model.split("/", 2).last
+    else
+      @llm_provider = llm_provider
+      @model = model
+    end
+    
     @verbose = verbose
+    @system_prompt = system_prompt
     @bot = create_llm_client
     
     # Log the chosen provider and model
@@ -107,7 +116,7 @@ class Agent
     puts "✅ Task completion tool called - exiting loop".colorize(:green)
   end
 
-  def query(question, max_turns = 5)
+  def query(question, max_turns = 10)
     i = 0
     bot = @bot
     next_prompt = question
@@ -119,7 +128,7 @@ class Agent
       # Show iteration number in non-verbose mode
       log_iteration(i, max_turns) unless @verbose
 
-      if @llm_provider == :openai || @llm_provider == :moonshot
+      if @llm_provider == :openai || @llm_provider == :moonshot || @llm_provider == :lmstudio
         # Use OpenAI-compatible function calling
         bot.messages << { role: "user", content: next_prompt } if next_prompt
 
@@ -133,9 +142,16 @@ class Agent
 
         # Append assistant message to history immediately
         bot.messages << assistant_message
+        
+        # Debug logging
+        if @verbose
+          puts "Assistant message keys: #{assistant_message.keys}".colorize(:yellow)
+          puts "Content: #{assistant_message["content"]}".colorize(:yellow) if assistant_message["content"]
+          puts "Tool calls: #{assistant_message["tool_calls"]&.length || 0}".colorize(:yellow)
+        end
 
-        # Handle moonshot's different tool call format
-        if @llm_provider == :moonshot && !assistant_message["tool_calls"] && assistant_message["content"]
+        # Handle moonshot's and lmstudio's different tool call format
+        if (@llm_provider == :moonshot || @llm_provider == :lmstudio) && !assistant_message["tool_calls"] && assistant_message["content"]
           begin
             content = assistant_message["content"].strip
             tool_calls = []
@@ -183,7 +199,7 @@ class Agent
             end
           rescue => e
             # If all parsing fails, continue as normal response
-            puts "Failed to parse moonshot tool calls: #{e.message}".colorize(:yellow)
+            puts "Failed to parse #{@llm_provider} tool calls: #{e.message}".colorize(:yellow)
           end
         end
 
@@ -227,7 +243,14 @@ class Agent
         else
           # No tool calls -> final answer
           log_no_tools unless @verbose
-          return format_markdown(assistant_message["content"])
+          content = assistant_message["content"]
+          if content.nil? || content.strip.empty?
+            puts "Warning: Model returned empty content".colorize(:yellow) if @verbose
+            next_prompt = "Please provide your response based on the information gathered."
+            tool_choice = "none"
+            next
+          end
+          return format_markdown(content)
         end
 
       else
@@ -272,6 +295,10 @@ class Agent
       # reset tool_choice for non-OpenAI flows
       tool_choice = "auto"
     end
+    
+    # If we've exhausted max_turns without getting a final answer
+    puts "Warning: Reached maximum iterations (#{max_turns}) without a final response.".colorize(:yellow)
+    return "I apologize, but I wasn't able to complete my response within the allowed iterations. Please try again."
   end
 
   private
@@ -307,13 +334,20 @@ class Agent
   def create_llm_client
     case @llm_provider
     when :openai
-      OpenAIClient.new(PROMPT_TOOLCALL, @model)
+      prompt = @system_prompt || PROMPT_TOOLCALL
+      OpenAIClient.new(prompt, @model)
     when :deepseek
-      DeepSeekClient.new(PROMPT_REACT, @model)
+      prompt = @system_prompt || PROMPT_REACT
+      DeepSeekClient.new(prompt, @model)
     when :perplexity
-      PerplexityClient.new("", @model)
+      prompt = @system_prompt || ""
+      PerplexityClient.new(prompt, @model)
     when :moonshot
-      MoonshotClient.new(PROMPT_TOOLCALL, @model)
+      prompt = @system_prompt || PROMPT_TOOLCALL
+      MoonshotClient.new(prompt, @model)
+    when :lmstudio
+      prompt = @system_prompt || PROMPT_TOOLCALL
+      LMStudioClient.new(prompt, @model)
     else
       raise ArgumentError, "Unknown LLM provider: #{@llm_provider}"
     end
